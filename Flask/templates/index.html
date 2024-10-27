@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Odds Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background-color: #ffffff;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #333333;
+        }
+        label, select, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007BFF;
+            color: #ffffff;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #007BFF;
+            color: #ffffff;
+        }
+        .event-section {
+            margin-bottom: 50px;
+        }
+        .no-data {
+            color: red;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .best-odd {
+            background-color: #d4edda;
+        }
+        .profit {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #155724; 
+        }
+        .loss {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #721c24; 
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            table, th, td {
+                font-size: 14px;
+            }
+            label, select, button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sports Odds Viewer</h1>
+        
+        
+        <form method="POST">
+            <label for="sport">Choose a Sport:</label>
+            <select name="sport" id="sport" required>
+                <option value="" disabled selected>Select a sport</option>
+                {% for sport in sports %}
+                    <option value="{{ sport[0] }}" {% if sport[0] == selected_sport %}selected{% endif %}>{{ sport[1] }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" name="sport_submit">View Leagues</button>
+        </form>
+
+        {% if leagues %}
+            <form method="POST">
+                
+                <input type="hidden" name="sport_id" value="{{ selected_sport }}">
+                
+                <label for="league">Choose a League:</label>
+                <select name="league" id="league" required>
+                    <option value="" disabled selected>Select a league</option>
+                    {% for league in leagues %}
+                        <option value="{{ league[0] }}" {% if league[0] == selected_league %}selected{% endif %}>{{ league[1] }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" name="league_submit">View Events</button>
+            </form>
+        {% endif %}
+
+        {% if events %}
+            <h2>Events and Odds</h2>
+            {% for event in events %}
+                <div class="event-section">
+                    <h3>Event ID: {{ event.event_id }}</h3>
+                    <p><strong>Matchup:</strong> {{ event.home_team_name_long }} vs. {{ event.away_team_name_long }}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Bookmaker</th>
+                                <th>Points Away Game ML Away</th>
+                                <th>Points Home Game ML Home</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bookmaker in event.bookmakers %}
+                                <tr>
+                                    <td>{{ bookmaker.name }}</td>
+                                    <td class="{% if bookmaker.points_away_game_ml_away == event.best_odds.points_away_game_ml_away.value and bookmaker.name in event.best_odds.points_away_game_ml_away.bookmakers %}best-odd{% endif %}">
+                                        {% if bookmaker.points_away_game_ml_away %}
+                                            {{ bookmaker.points_away_game_ml_away }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td class="{% if bookmaker.points_home_game_ml_home == event.best_odds.points_home_game_ml_home.value and bookmaker.name in event.best_odds.points_home_game_ml_home.bookmakers %}best-odd{% endif %}">
+                                        {% if bookmaker.points_home_game_ml_home %}
+                                            {{ bookmaker.points_home_game_ml_home }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if event.arbitrage %}
+                        <p class="profit">Arbitrage Opportunity! Potential Profit: {{ event.profit_percentage }}%</p>
+                    {% else %}
+                        <p class="loss">No Arbitrage Opportunity. Potential Loss: {{ event.profit_percentage }}%</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% elif selected_league %}
+            <p class="no-data">No events available for the selected league.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
